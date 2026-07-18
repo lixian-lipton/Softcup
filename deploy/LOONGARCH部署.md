@@ -50,16 +50,15 @@ bash scripts/vm_install.sh
 # bash scripts/vm_install.sh --offline
 ```
 
-离线安装 `pydantic-core` 需要编译工具：
+当前离线包已避开 Rust/`pydantic-core`/`Cython`。若仅 `greenlet` 编译失败：
 
 ```bash
-# 银河麒麟 / 类 RHEL
-sudo yum install -y gcc gcc-c++ make python3-devel openssl-devel
-# 若提示需要 Rust：
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source "$HOME/.cargo/env"
+# 银河麒麟 / 类 RHEL（可选，用于 greenlet）
+sudo yum install -y gcc gcc-c++ make python3-devel
 bash scripts/vm_install.sh --offline
 ```
+
+无 gcc 时也可先启动服务；同步检索/问答一般仍可用。
 
 ### 3. 启动（不要再跑 ingest_pdf）
 

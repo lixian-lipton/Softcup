@@ -52,11 +52,37 @@ install_offline() {
     exit 1
   fi
   echo "==> 离线安装（来自 $WHEEL_DIR）"
-  echo "提示: 已改用 pydantic v1，无需 Rust/maturin。"
-  echo "      若 greenlet/sqlalchemy 源码编译失败，请先: sudo yum install -y gcc gcc-c++ python3-devel"
+  echo "提示: SQLAlchemy 使用纯 Python wheel，无需 Cython/Rust。"
+  echo "      greenlet 若编译失败，可先: sudo yum install -y gcc gcc-c++ python3-devel"
+
   pip install --no-index --find-links="$WHEEL_DIR" \
-    pip setuptools wheel packaging tomli pathspec || true
-  pip install --no-index --find-links="$WHEEL_DIR" -r "$REQ"
+    pip setuptools wheel packaging tomli
+
+  # 先装除 greenlet 外的包（均为 wheel，无需编译）
+  pip install --no-index --find-links="$WHEEL_DIR" \
+    fastapi==0.99.1 \
+    pydantic==1.10.22 \
+    uvicorn==0.34.0 \
+    starlette==0.27.0 \
+    anyio==3.7.1 \
+    sniffio==1.3.1 \
+    idna==3.10 \
+    typing-extensions==4.12.2 \
+    click==8.1.8 \
+    h11==0.14.0 \
+    httpx==0.27.2 \
+    httpcore==1.0.7 \
+    certifi==2024.12.14 \
+    "SQLAlchemy==2.0.36" \
+    python-multipart==0.0.20 \
+    aiofiles==24.1.0 \
+    python-dotenv==1.0.1
+
+  # greenlet 需本地 gcc；失败时同步 API 仍通常可用
+  if ! pip install --no-index --find-links="$WHEEL_DIR" greenlet==3.1.1; then
+    echo "WARN: greenlet 安装失败。若只有同步接口，一般仍可运行。"
+    echo "      建议安装编译工具后重试: sudo yum install -y gcc gcc-c++ python3-devel"
+  fi
 }
 
 if [[ "$OFFLINE" -eq 1 ]]; then
@@ -94,7 +120,12 @@ import importlib
 for m in ("fastapi", "uvicorn", "pydantic", "sqlalchemy", "httpx"):
     importlib.import_module(m)
     print("  OK", m)
-print("全部依赖可用")
+try:
+    import greenlet  # noqa: F401
+    print("  OK greenlet")
+except Exception as exc:
+    print("  WARN greenlet:", exc)
+print("全部关键依赖可用")
 PY
 
 echo
