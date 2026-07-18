@@ -52,8 +52,8 @@ install_offline() {
     exit 1
   fi
   echo "==> 离线安装（来自 $WHEEL_DIR）"
-  echo "提示: pydantic-core / greenlet / sqlalchemy 源码包需本机有 gcc；"
-  echo "      pydantic-core 还需要 rustc（可用: curl https://sh.rustup.rs -sSf | sh）"
+  echo "提示: 已改用 pydantic v1，无需 Rust/maturin。"
+  echo "      若 greenlet/sqlalchemy 源码编译失败，请先: sudo yum install -y gcc gcc-c++ python3-devel"
   pip install --no-index --find-links="$WHEEL_DIR" \
     pip setuptools wheel packaging tomli pathspec || true
   pip install --no-index --find-links="$WHEEL_DIR" -r "$REQ"

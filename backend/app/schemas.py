@@ -1,6 +1,12 @@
 from datetime import datetime
 
+import pydantic
 from pydantic import BaseModel, Field
+
+_PYDANTIC_V2 = int(pydantic.VERSION.split(".", 1)[0]) >= 2
+
+if _PYDANTIC_V2:
+    from pydantic import ConfigDict
 
 
 class SearchRequest(BaseModel):
@@ -98,7 +104,12 @@ class CaseOut(BaseModel):
     created_at: datetime
     reviewed_at: datetime | None = None
 
-    model_config = {"from_attributes": True}
+    if _PYDANTIC_V2:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+
+        class Config:
+            orm_mode = True
 
 
 class CaseReview(BaseModel):
@@ -127,7 +138,12 @@ class AnnotationRecord(BaseModel):
     source_refs: str | None = None
     created_at: datetime
 
-    model_config = {"from_attributes": True}
+    if _PYDANTIC_V2:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+
+        class Config:
+            orm_mode = True
 
 
 class GraphNode(BaseModel):
