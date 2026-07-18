@@ -1,0 +1,10 @@
+backend/.venv/
+frontend/node_modules/
+__pycache__/
+*.pyc
+.env
+data/uploads/
+data/*.log
+deploy/softcup-loongarch-bundle.tar.gz
+deploy/_bundle_stage/
+.DS_Store
