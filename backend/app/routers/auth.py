@@ -5,7 +5,7 @@ from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User, UserRole
-from app.schemas import LoginRequest, RegisterRequest, TokenResponse, UserOut
+from app.schemas import ChangePasswordRequest, LoginRequest, RegisterRequest, TokenResponse, UserOut
 from app.services.security import create_access_token, hash_password, verify_password
 
 router = APIRouter(prefix="/api/auth", tags=["认证"])
@@ -72,3 +72,25 @@ async def login(body: LoginRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserOut)
 async def me(user: User = Depends(get_current_user)):
     return _user_out(user)
+
+
+@router.post("/change-password")
+async def change_password(
+    body: ChangePasswordRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(body.old_password, user.password_hash):
+        # 用 400，避免前端全局 401 拦截器误清会话
+        raise HTTPException(status_code=400, detail="当前密码不正确")
+    if body.old_password == body.new_password:
+        raise HTTPException(status_code=400, detail="新密码不能与当前密码相同")
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=400, detail="新密码至少 6 位")
+
+    db_user = db.query(User).filter(User.id == user.id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    db_user.password_hash = hash_password(body.new_password)
+    db.commit()
+    return {"ok": True, "message": "密码已修改"}

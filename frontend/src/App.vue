@@ -1,14 +1,22 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
-import { getStats, healthCheck } from './api'
+import { changePassword, getStats, healthCheck } from './api'
 import { clearSession, currentUser, isAdmin, isLoggedIn } from './auth'
 
 const route = useRoute()
 const router = useRouter()
 const health = ref(null)
 const stats = ref({ total_chunks: 0, sources: [] })
+const pwdVisible = ref(false)
+const pwdLoading = ref(false)
+const pwdForm = reactive({
+  old_password: '',
+  new_password: '',
+  confirm_password: '',
+})
 
 const menus = computed(() => [
   { path: '/search', label: '智能检索', icon: 'Search' },
@@ -51,6 +59,42 @@ async function refreshSystem() {
 function logout() {
   clearSession()
   router.replace('/login')
+}
+
+function openChangePassword() {
+  pwdForm.old_password = ''
+  pwdForm.new_password = ''
+  pwdForm.confirm_password = ''
+  pwdVisible.value = true
+}
+
+async function submitChangePassword() {
+  if (!pwdForm.old_password || !pwdForm.new_password) {
+    ElMessage.warning('请填写当前密码和新密码')
+    return
+  }
+  if (pwdForm.new_password.length < 6) {
+    ElMessage.warning('新密码至少 6 位')
+    return
+  }
+  if (pwdForm.new_password !== pwdForm.confirm_password) {
+    ElMessage.warning('两次输入的新密码不一致')
+    return
+  }
+  pwdLoading.value = true
+  try {
+    await changePassword({
+      old_password: pwdForm.old_password,
+      new_password: pwdForm.new_password,
+    })
+    ElMessage.success('密码已修改')
+    pwdVisible.value = false
+  } catch (e) {
+    const detail = e?.response?.data?.detail
+    ElMessage.error(typeof detail === 'string' ? detail : '修改失败，请重试')
+  } finally {
+    pwdLoading.value = false
+  }
 }
 
 onMounted(() => {
@@ -112,6 +156,7 @@ onMounted(() => {
         </div>
         <div class="top-actions">
           <el-button size="small" :icon="Refresh" @click="refreshSystem">刷新状态</el-button>
+          <el-button size="small" @click="openChangePassword">修改密码</el-button>
           <el-button size="small" @click="logout">退出登录</el-button>
         </div>
       </el-header>
@@ -120,6 +165,38 @@ onMounted(() => {
       </el-main>
     </el-container>
   </el-container>
+
+  <el-dialog v-model="pwdVisible" title="修改密码" width="420px" destroy-on-close>
+    <el-form label-position="top" @submit.prevent="submitChangePassword">
+      <el-form-item label="当前密码">
+        <el-input v-model="pwdForm.old_password" type="password" show-password autocomplete="current-password" />
+      </el-form-item>
+      <el-form-item label="新密码">
+        <el-input
+          v-model="pwdForm.new_password"
+          type="password"
+          show-password
+          maxlength="64"
+          placeholder="至少 6 位"
+          autocomplete="new-password"
+        />
+      </el-form-item>
+      <el-form-item label="确认新密码">
+        <el-input
+          v-model="pwdForm.confirm_password"
+          type="password"
+          show-password
+          maxlength="64"
+          autocomplete="new-password"
+          @keyup.enter="submitChangePassword"
+        />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="pwdVisible = false">取消</el-button>
+      <el-button type="primary" :loading="pwdLoading" @click="submitChangePassword">保存</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <style scoped>

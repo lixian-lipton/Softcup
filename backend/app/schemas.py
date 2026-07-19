@@ -104,6 +104,11 @@ class LoginRequest(BaseModel):
     login_as: str = Field("user", description="user 或 admin")
 
 
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=1, max_length=64)
+    new_password: str = Field(..., min_length=6, max_length=64)
+
+
 class UserOut(BaseModel):
     id: int
     username: str

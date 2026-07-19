@@ -51,24 +51,25 @@ def migrate_db() -> None:
 
 
 def seed_admin() -> None:
-    """首次启动创建管理员；口令写入 data/INITIAL_ADMIN.txt，不在界面展示。"""
+    """首次启动创建默认管理员 admin / 123456。"""
     import os
-    import secrets
-    from pathlib import Path
 
-    from app.config import DATA_DIR
     from app.models import User, UserRole
     from app.services.security import hash_password
 
     db = SessionLocal()
     try:
         admin = db.query(User).filter(User.username == "admin").first()
-        if admin:
-            return
+        password = (os.environ.get("ADMIN_PASSWORD") or "123456").strip() or "123456"
 
-        password = (os.environ.get("ADMIN_PASSWORD") or "").strip()
-        if len(password) < 8:
-            password = secrets.token_urlsafe(12)
+        if admin:
+            # 运维重置：SOFTCUP_RESET_ADMIN_PASSWORD=1 时将 admin 口令恢复为默认/环境变量
+            if os.environ.get("SOFTCUP_RESET_ADMIN_PASSWORD", "").strip() in ("1", "true", "yes"):
+                admin.password_hash = hash_password(password)
+                admin.is_active = True
+                db.commit()
+                print("[softcup] 已重置管理员密码")
+            return
 
         db.add(
             User(
@@ -79,20 +80,6 @@ def seed_admin() -> None:
             )
         )
         db.commit()
-
-        cred_path = Path(DATA_DIR) / "INITIAL_ADMIN.txt"
-        cred_path.write_text(
-            "设备检修系统 — 初始管理员凭据（请妥善保管，登录后建议尽快修改）\n"
-            f"username: admin\n"
-            f"password: {password}\n"
-            "登录页请选择「管理员」身份。\n",
-            encoding="utf-8",
-        )
-        try:
-            cred_path.chmod(0o600)
-        except OSError:
-            pass
-        print(f"[softcup] 已创建管理员账号，初始口令见: {cred_path}")
     finally:
         db.close()
 

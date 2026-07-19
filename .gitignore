@@ -3,7 +3,6 @@ frontend/node_modules/
 __pycache__/
 *.pyc
 .env
-data/INITIAL_ADMIN.txt
 data/uploads/
 data/*.log
 deploy/softcup-loongarch-bundle.tar.gz

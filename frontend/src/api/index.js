@@ -30,6 +30,7 @@ export const getStats = () => api.get('/stats')
 export const login = (data) => api.post('/auth/login', data)
 export const register = (data) => api.post('/auth/register', data)
 export const fetchMe = () => api.get('/auth/me')
+export const changePassword = (data) => api.post('/auth/change-password', data)
 export const searchText = (data) => api.post('/search', data)
 export const askText = (data) => api.post('/ask', data)
 export const askImage = (formData) =>
