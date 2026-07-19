@@ -1,14 +1,24 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { createCase, getGraph, listAnnotations, listCases, reviewCase } from '../api'
+import {
+  createCase,
+  getGraph,
+  listAnnotations,
+  listCases,
+  reviewAnnotation,
+  reviewCase,
+  uploadKnowledgeDocument,
+} from '../api'
+import { isAdmin } from '../auth'
 
-const tab = ref('cases')
+const tab = ref('upload')
 const cases = ref([])
 const annotations = ref([])
 const graph = ref({ nodes: [], edges: [], summary: {} })
 const loading = ref(false)
 const statusFilter = ref('')
+const annStatusFilter = ref('')
 
 const form = ref({
   title: '',
@@ -18,6 +28,10 @@ const form = ref({
 })
 const imageFile = ref(null)
 const imagePreview = ref('')
+const docFile = ref(null)
+const docTitle = ref('')
+const docDevice = ref('摩托车发动机')
+const docLoading = ref(false)
 
 const typeLabel = { device: '设备', fault: '故障', part: '部件', procedure: '方案' }
 const relLabel = {
@@ -26,6 +40,7 @@ const relLabel = {
   contains: '包含',
   related_to: '关联故障',
 }
+const statusLabel = { pending: '待审', approved: '已入库', rejected: '已驳回' }
 
 const caseSummary = computed(() => {
   const result = { pending: 0, approved: 0, rejected: 0 }
@@ -33,8 +48,24 @@ const caseSummary = computed(() => {
   return result
 })
 
+const tabs = computed(() => {
+  const base = [
+    { name: 'upload', label: '我的案例' },
+    { name: 'annotations', label: isAdmin.value ? '意见审核' : '我的意见' },
+    { name: 'graph', label: '知识图谱' },
+  ]
+  if (isAdmin.value) {
+    base.unshift({ name: 'cases', label: '案例审核' })
+    base.push({ name: 'docs', label: '知识文件' })
+  }
+  return base
+})
+
 async function refreshCases() {
-  const { data } = await listCases(statusFilter.value || undefined)
+  const params = {}
+  if (statusFilter.value) params.status = statusFilter.value
+  if (!isAdmin.value) params.mine = true
+  const { data } = await listCases(params)
   cases.value = data
 }
 
@@ -44,7 +75,10 @@ async function refreshGraph() {
 }
 
 async function refreshAnnotations() {
-  const { data } = await listAnnotations()
+  const params = {}
+  if (annStatusFilter.value) params.status = annStatusFilter.value
+  if (!isAdmin.value) params.mine = true
+  const { data } = await listAnnotations(params)
   annotations.value = data
 }
 
@@ -57,7 +91,11 @@ async function refreshAll() {
   }
 }
 
-onMounted(refreshAll)
+onMounted(() => {
+  if (!isAdmin.value) tab.value = 'upload'
+  else tab.value = 'cases'
+  refreshAll()
+})
 
 function onFileChange(f) {
   imageFile.value = f.raw
@@ -69,6 +107,10 @@ function clearImage() {
   imagePreview.value = ''
 }
 
+function onDocChange(f) {
+  docFile.value = f.raw
+}
+
 async function submitCase() {
   if (!form.value.title || !form.value.symptom || !form.value.solution) {
     ElMessage.warning('请填写标题、故障现象和处理方案')
@@ -78,18 +120,46 @@ async function submitCase() {
   Object.entries(form.value).forEach(([k, v]) => fd.append(k, v))
   if (imageFile.value) fd.append('image', imageFile.value)
   await createCase(fd)
-  ElMessage.success('案例已提交，等待审核')
+  ElMessage.success('案例已提交，等待管理员审核')
   form.value = { title: '', device_model: '摩托车发动机', symptom: '', solution: '' }
   clearImage()
   statusFilter.value = ''
   await refreshCases()
-  tab.value = 'cases'
 }
 
 async function doReview(id, approve) {
   await reviewCase(id, { approve })
   ElMessage.success(approve ? '已通过并入库' : '已驳回')
   await Promise.all([refreshCases(), refreshGraph()])
+}
+
+async function doReviewAnn(id, approve) {
+  await reviewAnnotation(id, { approve })
+  ElMessage.success(approve ? '意见已通过并写入知识库' : '意见已驳回')
+  await refreshAnnotations()
+}
+
+async function submitDoc() {
+  if (!docFile.value) {
+    ElMessage.warning('请选择 TXT/MD/PDF 文件')
+    return
+  }
+  docLoading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', docFile.value)
+    fd.append('device_model', docDevice.value)
+    if (docTitle.value.trim()) fd.append('title', docTitle.value.trim())
+    const { data } = await uploadKnowledgeDocument(fd)
+    ElMessage.success(data.message)
+    docFile.value = null
+    docTitle.value = ''
+    await refreshAll()
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.detail || '上传失败')
+  } finally {
+    docLoading.value = false
+  }
 }
 </script>
 
@@ -99,14 +169,14 @@ async function doReview(id, approve) {
       <div class="section-title">
         <div>
           <h2>知识沉淀</h2>
-          <p>案例审核通过后进入检索库并更新图谱。</p>
+          <p>{{ isAdmin ? '审核用户提交，并通过的内容写入检索库。' : '上传案例与人工意见，等待管理员审核。' }}</p>
         </div>
         <el-button size="small" :loading="loading" @click="refreshAll">刷新</el-button>
       </div>
       <div class="status-grid">
         <div>
           <strong>{{ caseSummary.pending }}</strong>
-          <span>待审</span>
+          <span>待审案例</span>
         </div>
         <div>
           <strong>{{ caseSummary.approved }}</strong>
@@ -114,20 +184,17 @@ async function doReview(id, approve) {
         </div>
         <div>
           <strong>{{ annotations.length }}</strong>
-          <span>标注</span>
+          <span>意见</span>
         </div>
       </div>
       <el-tabs v-model="tab">
-        <el-tab-pane label="案例审核" name="cases" />
-        <el-tab-pane label="案例上传" name="upload" />
-        <el-tab-pane label="知识图谱" name="graph" />
-        <el-tab-pane label="人工标注" name="annotations" />
+        <el-tab-pane v-for="t in tabs" :key="t.name" :label="t.label" :name="t.name" />
       </el-tabs>
     </section>
 
     <section class="panel" v-if="tab === 'upload'">
       <div class="section-title compact">
-        <h2>新增案例</h2>
+        <h2>提交检修案例</h2>
       </div>
       <el-form label-position="top">
         <el-form-item label="标题"><el-input v-model="form.title" maxlength="120" show-word-limit /></el-form-item>
@@ -152,10 +219,43 @@ async function doReview(id, approve) {
         </el-form-item>
         <el-button type="primary" @click="submitCase">提交审核</el-button>
       </el-form>
+
+      <div class="section-title compact" style="margin-top: 24px">
+        <h2>我提交的案例</h2>
+      </div>
+      <el-empty v-if="!cases.length && !isAdmin" description="暂无案例" />
+      <div v-if="!isAdmin" class="case-list">
+        <article v-for="item in cases" :key="item.id" class="case-card">
+          <div class="case-body">
+            <div class="case-head">
+              <h3>{{ item.title }}</h3>
+              <el-tag size="small">{{ statusLabel[item.status] || item.status }}</el-tag>
+            </div>
+            <p>{{ item.symptom }}</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" v-if="tab === 'docs' && isAdmin">
+      <div class="section-title compact">
+        <h2>管理员：添加知识文件</h2>
+      </div>
+      <p class="tip">推荐 TXT/MD。PDF 需本机有 pymupdf；虚机建议上传文本。</p>
+      <el-form label-position="top">
+        <el-form-item label="显示名称（可选）"><el-input v-model="docTitle" placeholder="默认用文件名" /></el-form-item>
+        <el-form-item label="设备型号"><el-input v-model="docDevice" /></el-form-item>
+        <el-form-item label="文件">
+          <el-upload :auto-upload="false" :limit="1" accept=".txt,.md,.markdown,.pdf,.csv" :on-change="onDocChange">
+            <el-button>选择文件</el-button>
+          </el-upload>
+        </el-form-item>
+        <el-button type="primary" :loading="docLoading" @click="submitDoc">上传并入库</el-button>
+      </el-form>
     </section>
   </div>
 
-  <section v-if="tab === 'cases'" class="panel content-panel">
+  <section v-if="tab === 'cases' && isAdmin" class="panel content-panel">
     <div class="section-title compact">
       <h2>案例审核</h2>
       <el-select v-model="statusFilter" clearable placeholder="全部状态" style="width: 140px" @change="refreshCases">
@@ -164,7 +264,6 @@ async function doReview(id, approve) {
         <el-option label="已驳回" value="rejected" />
       </el-select>
     </div>
-
     <el-empty v-if="!cases.length" description="暂无案例" />
     <div v-else class="case-list" v-loading="loading">
       <article v-for="item in cases" :key="item.id" class="case-card" :class="{ 'has-image': item.image_url }">
@@ -173,10 +272,10 @@ async function doReview(id, approve) {
           <div class="case-head">
             <div>
               <h3>{{ item.title }}</h3>
-              <span>{{ item.device_model }}</span>
+              <span>{{ item.device_model }} · {{ item.author || '未知用户' }}</span>
             </div>
             <el-tag :type="item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'info' : 'warning'">
-              {{ item.status }}
+              {{ statusLabel[item.status] || item.status }}
             </el-tag>
           </div>
           <p><strong>故障：</strong>{{ item.symptom }}</p>
@@ -229,16 +328,35 @@ async function doReview(id, approve) {
 
   <section v-if="tab === 'annotations'" class="panel content-panel">
     <div class="section-title compact">
-      <h2>人工标注</h2>
-      <span>{{ annotations.length }} 条</span>
+      <h2>{{ isAdmin ? '人工意见审核' : '我的意见' }}</h2>
+      <el-select
+        v-if="isAdmin"
+        v-model="annStatusFilter"
+        clearable
+        placeholder="全部状态"
+        style="width: 140px"
+        @change="refreshAnnotations"
+      >
+        <el-option label="待审" value="pending" />
+        <el-option label="已入库" value="approved" />
+        <el-option label="已驳回" value="rejected" />
+      </el-select>
     </div>
-    <el-empty v-if="!annotations.length" description="暂无标注" />
+    <el-empty v-if="!annotations.length" description="暂无标注意见" />
     <div v-else class="annotation-list">
       <article v-for="item in annotations" :key="item.id" class="annotation-card">
-        <strong>{{ item.query }}</strong>
+        <div class="case-head">
+          <strong>{{ item.query }}</strong>
+          <el-tag size="small">{{ statusLabel[item.status] || item.status }}</el-tag>
+        </div>
+        <span v-if="item.author">提交人：{{ item.author }}</span>
         <el-rate :model-value="item.rating || 0" disabled />
-        <p v-if="item.corrected_answer">{{ item.corrected_answer }}</p>
+        <p v-if="item.corrected_answer"><strong>修正：</strong>{{ item.corrected_answer }}</p>
         <span>{{ item.source_refs || '无引用记录' }}</span>
+        <div class="case-actions" v-if="isAdmin && item.status === 'pending'" style="margin-top: 10px">
+          <el-button size="small" type="success" @click="doReviewAnn(item.id, true)">通过入库</el-button>
+          <el-button size="small" @click="doReviewAnn(item.id, false)">驳回</el-button>
+        </div>
       </article>
     </div>
   </section>
@@ -263,7 +381,8 @@ async function doReview(id, approve) {
   font-size: 24px;
   color: #17324d;
 }
-.status-grid span {
+.status-grid span,
+.tip {
   color: #607087;
 }
 .content-panel {

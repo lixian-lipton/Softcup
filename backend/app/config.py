@@ -55,6 +55,8 @@ class Settings(BaseSettings):
 
     max_upload_mb: int = 8
     allowed_image_types: str = "image/jpeg,image/png,image/webp"
+    auth_secret: str = "softcup-change-me-in-production"
+    auth_token_hours: int = 168
 
     @property
     def cors_origin_list(self) -> list[str]:

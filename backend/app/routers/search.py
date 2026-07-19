@@ -1,5 +1,7 @@
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 
+from app.deps import get_current_user
+from app.models import User
 from app.schemas import (
     AskRequest,
     AskResponse,
@@ -16,7 +18,7 @@ router = APIRouter(tags=["检索", "智能问答"])
 
 
 @router.post("/api/search", response_model=SearchResponse, tags=["检索"])
-async def search(req: SearchRequest):
+async def search(req: SearchRequest, _: User = Depends(get_current_user)):
     hits_raw = search_store.search(
         query=req.query,
         top_k=req.top_k,
@@ -31,7 +33,7 @@ async def search(req: SearchRequest):
 
 
 @router.post("/api/ask", response_model=AskResponse, tags=["智能问答"])
-async def ask(req: AskRequest):
+async def ask(req: AskRequest, _: User = Depends(get_current_user)):
     return await rag_ask(
         query=req.query,
         device_model=req.device_model,
@@ -45,6 +47,7 @@ async def ask_with_image(
     device_model: str | None = Form(None),
     top_k: int = Form(5, ge=1, le=20),
     image: UploadFile = File(...),
+    _: User = Depends(get_current_user),
 ):
     save_path = await save_image_upload(image, prefix="ask")
     image_desc, _ = await llm_service.describe_image(str(save_path))

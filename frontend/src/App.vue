@@ -1,18 +1,20 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Refresh } from '@element-plus/icons-vue'
 import { getStats, healthCheck } from './api'
+import { clearSession, currentUser, isAdmin, isLoggedIn } from './auth'
 
 const route = useRoute()
+const router = useRouter()
 const health = ref(null)
 const stats = ref({ total_chunks: 0, sources: [] })
 
-const menus = [
+const menus = computed(() => [
   { path: '/search', label: '智能检索', icon: 'Search' },
   { path: '/workflow', label: '作业指引', icon: 'List' },
   { path: '/knowledge', label: '知识管理', icon: 'Collection' },
-]
+])
 
 const statusType = computed(() => (health.value?.status === 'ok' ? 'success' : 'danger'))
 const sourceSummary = computed(() => {
@@ -20,6 +22,7 @@ const sourceSummary = computed(() => {
   const cases = stats.value.sources?.find((s) => s.doc_type === 'case')?.count || 0
   return { manual, cases }
 })
+const isLoginPage = computed(() => route.path === '/login')
 
 async function refreshSystem() {
   try {
@@ -31,11 +34,20 @@ async function refreshSystem() {
   }
 }
 
-onMounted(refreshSystem)
+function logout() {
+  clearSession()
+  router.replace('/login')
+}
+
+onMounted(() => {
+  if (!isLoginPage.value) refreshSystem()
+})
 </script>
 
 <template>
-  <el-container class="layout">
+  <router-view v-if="isLoginPage" />
+
+  <el-container v-else class="layout">
     <el-aside class="sidebar" width="248px">
       <div class="brand">
         <el-icon size="24"><Setting /></el-icon>
@@ -65,6 +77,10 @@ onMounted(refreshSystem)
           <span>架构</span>
           <strong>{{ health?.arch || '-' }}</strong>
         </div>
+        <div class="panel-row" v-if="isLoggedIn">
+          <span>账号</span>
+          <strong>{{ currentUser?.username }} ({{ isAdmin ? '管理员' : '用户' }})</strong>
+        </div>
         <div class="metric-grid">
           <div>
             <strong>{{ sourceSummary.manual }}</strong>
@@ -84,7 +100,10 @@ onMounted(refreshSystem)
           <h1>{{ route.meta.title || '智能检修工作台' }}</h1>
           <p>{{ health?.note || '正在读取系统状态' }}</p>
         </div>
-        <el-button size="small" :icon="Refresh" @click="refreshSystem">刷新状态</el-button>
+        <div class="top-actions">
+          <el-button size="small" :icon="Refresh" @click="refreshSystem">刷新状态</el-button>
+          <el-button size="small" @click="logout">退出登录</el-button>
+        </div>
       </el-header>
       <el-main>
         <router-view />
@@ -92,3 +111,11 @@ onMounted(refreshSystem)
     </el-container>
   </el-container>
 </template>
+
+<style scoped>
+.top-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+</style>

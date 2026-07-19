@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from app.models import AuditStatus, CaseStudy, KnowledgeEntity, KnowledgeRelation
+from app.models import Annotation, AuditStatus, CaseStudy, KnowledgeEntity, KnowledgeRelation
 from app.services.search_store import search_store
 
 PART_TERMS = (
@@ -106,3 +106,36 @@ def approve_case(db: Session, case: CaseStudy) -> None:
 
 def reject_case(db: Session, case: CaseStudy) -> None:
     case.status = AuditStatus.rejected
+
+
+def add_annotation_to_search_index(ann: Annotation) -> None:
+    corrected = (ann.corrected_answer or "").strip()
+    text = (
+        f"人工修正意见\n"
+        f"问题：{ann.query}\n"
+        f"原回答：{ann.original_answer}\n"
+        f"修正：{corrected or '（无修正文本，仅评分反馈）'}\n"
+        f"引用：{ann.source_refs or '无'}"
+    )
+    search_store.add_documents(
+        texts=[text],
+        metadatas=[
+            {
+                "source": f"annotation:{ann.id}",
+                "page": None,
+                "device_model": None,
+                "doc_type": "annotation",
+                "chunk_index": 0,
+            }
+        ],
+        ids=[f"annotation-{ann.id}"],
+    )
+
+
+def approve_annotation(ann: Annotation) -> None:
+    ann.status = AuditStatus.approved
+    add_annotation_to_search_index(ann)
+
+
+def reject_annotation(ann: Annotation) -> None:
+    ann.status = AuditStatus.rejected

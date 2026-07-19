@@ -8,11 +8,11 @@ from fastapi.responses import Response
 
 from app.config import ROOT_DIR, UPLOAD_DIR, settings
 from app.database import init_db
-from app.routers import knowledge, search, system, workflow
+from app.routers import auth, knowledge, search, system, workflow
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.5.0",
+    version="0.6.0",
     description="Soft Cup A1 — 设备检修知识检索与作业系统",
 )
 
@@ -25,6 +25,7 @@ app.add_middleware(
 )
 
 app.include_router(system.router)
+app.include_router(auth.router)
 app.include_router(search.router)
 app.include_router(workflow.router)
 app.include_router(knowledge.router)

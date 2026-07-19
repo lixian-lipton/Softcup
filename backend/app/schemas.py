@@ -92,6 +92,35 @@ class WorkflowResponse(BaseModel):
     evidence_hits: list[SearchHit] = Field(default_factory=list)
 
 
+class RegisterRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=32)
+    password: str = Field(..., min_length=6, max_length=64)
+
+
+class LoginRequest(BaseModel):
+    username: str = Field(..., min_length=1, max_length=32)
+    password: str = Field(..., min_length=1, max_length=64)
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    role: str
+
+    if _PYDANTIC_V2:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+
+        class Config:
+            orm_mode = True
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+
 class CaseOut(BaseModel):
     id: int
     title: str
@@ -101,6 +130,8 @@ class CaseOut(BaseModel):
     image_path: str | None
     image_url: str | None = None
     status: str
+    user_id: int | None = None
+    author: str | None = None
     created_at: datetime
     reviewed_at: datetime | None = None
 
@@ -133,10 +164,15 @@ class AnnotationOut(BaseModel):
 class AnnotationRecord(BaseModel):
     id: int
     query: str
+    original_answer: str | None = None
     corrected_answer: str | None = None
     rating: int | None = None
     source_refs: str | None = None
+    status: str = "pending"
+    user_id: int | None = None
+    author: str | None = None
     created_at: datetime
+    reviewed_at: datetime | None = None
 
     if _PYDANTIC_V2:
         model_config = ConfigDict(from_attributes=True)
@@ -144,6 +180,12 @@ class AnnotationRecord(BaseModel):
 
         class Config:
             orm_mode = True
+
+
+class DocumentIngestResult(BaseModel):
+    source: str
+    chunks: int
+    message: str
 
 
 class GraphNode(BaseModel):
