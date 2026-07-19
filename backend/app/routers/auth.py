@@ -43,15 +43,26 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest, db: Session = Depends(get_db)):
+    login_as = (body.login_as or "user").strip().lower()
+    if login_as not in ("user", "admin"):
+        raise HTTPException(status_code=400, detail="登录身份无效，请选择普通用户或管理员")
+
     user = db.query(User).filter(User.username == body.username.strip()).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="账号已禁用")
+
+    actual = user.role.value if hasattr(user.role, "value") else str(user.role)
+    if actual != login_as:
+        if login_as == "admin":
+            raise HTTPException(status_code=403, detail="该账号不是管理员，请选择「普通用户」登录")
+        raise HTTPException(status_code=403, detail="该账号是管理员，请选择「管理员」登录")
+
     token = create_access_token(
         user_id=user.id,
         username=user.username,
-        role=user.role.value,
+        role=actual,
         secret=settings.auth_secret,
         expires_hours=settings.auth_token_hours,
     )

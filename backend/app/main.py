@@ -56,6 +56,9 @@ async def uploaded_file(filename: str):
 
 @app.get("/{path:path}", include_in_schema=False)
 async def frontend(path: str):
+    # 避免未注册的 /api/* 被本路由匹配后对 POST 返回 405 Method Not Allowed
+    if path == "api" or path.startswith("api/") or path.startswith("uploads/"):
+        raise HTTPException(status_code=404, detail="接口不存在，请更新并重启后端")
     if not frontend_dist.exists():
         raise HTTPException(status_code=404, detail="前端尚未构建")
     target = _safe_file(frontend_dist, path) if path else None

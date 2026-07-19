@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login, register } from '../api'
@@ -7,27 +7,46 @@ import { setSession } from '../auth'
 
 const router = useRouter()
 const mode = ref('login')
+const loginAs = ref('user')
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
+
+watch(mode, (m) => {
+  if (m === 'register') loginAs.value = 'user'
+})
 
 async function submit() {
   if (!username.value.trim() || !password.value) {
     ElMessage.warning('请输入用户名和密码')
     return
   }
+  if (mode.value === 'register' && password.value.length < 6) {
+    ElMessage.warning('注册密码至少 6 位')
+    return
+  }
   loading.value = true
   try {
-    const apiFn = mode.value === 'login' ? login : register
-    const { data } = await apiFn({
-      username: username.value.trim(),
-      password: password.value,
-    })
-    setSession(data.access_token, data.user)
-    ElMessage.success(mode.value === 'login' ? '登录成功' : '注册成功')
+    if (mode.value === 'register') {
+      const { data } = await register({
+        username: username.value.trim(),
+        password: password.value,
+      })
+      setSession(data.access_token, data.user)
+      ElMessage.success('注册成功，已以普通用户身份进入')
+    } else {
+      const { data } = await login({
+        username: username.value.trim(),
+        password: password.value,
+        login_as: loginAs.value,
+      })
+      setSession(data.access_token, data.user)
+      ElMessage.success(loginAs.value === 'admin' ? '管理员登录成功' : '用户登录成功')
+    }
     router.replace('/search')
   } catch (e) {
-    ElMessage.error(e?.response?.data?.detail || '操作失败')
+    const detail = e?.response?.data?.detail
+    ElMessage.error(typeof detail === 'string' ? detail : '操作失败，请确认已更新并重启后端')
   } finally {
     loading.value = false
   }
@@ -54,18 +73,41 @@ async function submit() {
       />
 
       <el-form label-position="top" @submit.prevent="submit">
+        <el-form-item v-if="mode === 'login'" label="登录身份">
+          <el-segmented
+            v-model="loginAs"
+            :options="[
+              { label: '普通用户', value: 'user' },
+              { label: '管理员', value: 'admin' },
+            ]"
+            block
+          />
+        </el-form-item>
         <el-form-item label="用户名">
-          <el-input v-model="username" maxlength="32" placeholder="普通用户可注册；管理员用 admin" />
+          <el-input
+            v-model="username"
+            maxlength="32"
+            :placeholder="mode === 'login' && loginAs === 'admin' ? '管理员账号，如 admin' : '普通用户名'"
+          />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input v-model="password" type="password" show-password maxlength="64" placeholder="至少 6 位" @keyup.enter="submit" />
+          <el-input
+            v-model="password"
+            type="password"
+            show-password
+            maxlength="64"
+            :placeholder="mode === 'register' ? '至少 6 位' : '登录密码'"
+            @keyup.enter="submit"
+          />
         </el-form-item>
         <el-button type="primary" style="width: 100%" :loading="loading" @click="submit">
-          {{ mode === 'login' ? '登录' : '注册并进入' }}
+          {{ mode === 'login' ? '登录' : '注册为普通用户' }}
         </el-button>
       </el-form>
 
-      <p class="hint">默认管理员：admin / 123456（仅演示，请部署后修改）</p>
+      <p class="hint">
+        注册只能创建普通用户。管理员请选择「管理员」身份后使用默认账号 admin / 123456（演示用，请尽快修改）。
+      </p>
     </section>
   </div>
 </template>
@@ -112,5 +154,6 @@ async function submit() {
 .hint {
   margin-top: 16px;
   text-align: center;
+  line-height: 1.5;
 }
 </style>

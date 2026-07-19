@@ -100,6 +100,8 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str = Field(..., min_length=1, max_length=32)
     password: str = Field(..., min_length=1, max_length=64)
+    # 登录身份：必须与账号在库中的角色一致（界面显式选择，而非仅靠用户名判断）
+    login_as: str = Field("user", description="user 或 admin")
 
 
 class UserOut(BaseModel):
