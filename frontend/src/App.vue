@@ -10,6 +10,7 @@ const route = useRoute()
 const router = useRouter()
 const health = ref(null)
 const stats = ref({ total_chunks: 0, sources: [] })
+const brandOk = ref(true)
 const pwdVisible = ref(false)
 const pwdLoading = ref(false)
 const pwdForm = reactive({
@@ -106,9 +107,18 @@ onMounted(() => {
   <router-view v-if="isLoginPage" />
 
   <el-container v-else class="layout">
-    <el-aside class="sidebar" width="248px">
+    <el-aside class="sidebar" width="260px">
       <div class="brand">
-        <el-icon size="24"><Setting /></el-icon>
+        <img
+          v-if="brandOk"
+          src="/brand-icon.png"
+          alt=""
+          class="brand-mark"
+          @error="brandOk = false"
+        />
+        <div v-else class="brand-fallback">
+          <el-icon size="22"><Setting /></el-icon>
+        </div>
         <div>
           <strong>设备检修系统</strong>
           <span>知识检索与作业平台</span>
@@ -161,7 +171,9 @@ onMounted(() => {
         </div>
       </el-header>
       <el-main>
-        <router-view />
+        <div class="page-enter" :key="route.path">
+          <router-view />
+        </div>
       </el-main>
     </el-container>
   </el-container>
@@ -211,5 +223,9 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+}
+.top-actions :deep(.el-button) {
+  border-radius: 8px;
 }
 </style>

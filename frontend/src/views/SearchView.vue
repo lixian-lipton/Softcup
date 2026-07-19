@@ -276,11 +276,12 @@ async function submitFeedback() {
 .answer {
   white-space: pre-wrap;
   line-height: 1.75;
-  padding: 16px;
-  background: #f7fbf8;
-  border: 1px solid #d8eadc;
-  border-radius: 8px;
+  padding: 18px;
+  background: linear-gradient(180deg, #f3faf6 0%, #f8fbf9 100%);
+  border: 1px solid #d2e8db;
+  border-radius: 12px;
   margin: 14px 0;
+  color: #1d3348;
 }
 .action-list {
   display: grid;
@@ -290,7 +291,10 @@ async function submitFeedback() {
   display: flex;
   gap: 8px;
   align-items: center;
-  color: #245b38;
+  color: #1f5f42;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f4faf7;
 }
 .feedback-btn {
   margin-top: 10px;

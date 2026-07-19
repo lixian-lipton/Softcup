@@ -62,54 +62,68 @@ async function submit() {
 
 <template>
   <div class="login-page">
-    <section class="login-card">
-      <div class="brand-block">
-        <img src="/brand-icon.png" alt="设备检修系统" class="brand-icon" @error="($e) => ($e.target.style.display='none')" />
+    <div class="login-atmosphere" aria-hidden="true" />
+    <section class="login-shell">
+      <aside class="login-hero">
+        <img src="/brand-icon.png" alt="" class="hero-icon" @error="($e) => ($e.target.style.display = 'none')" />
         <h1>设备检修系统</h1>
-        <p>设备检修知识检索与作业平台</p>
+        <p>面向现场检修的知识检索、作业指引与经验沉淀平台</p>
+        <ul>
+          <li>多模态故障检索</li>
+          <li>标准化作业指引</li>
+          <li>案例审核与知识入库</li>
+        </ul>
+      </aside>
+
+      <div class="login-card">
+        <div class="card-head">
+          <h2>{{ mode === 'login' ? '欢迎回来' : '创建账号' }}</h2>
+          <p>{{ mode === 'login' ? '请选择身份并登录系统' : '注册后以普通用户身份使用' }}</p>
+        </div>
+
+        <el-segmented
+          v-model="mode"
+          :options="[
+            { label: '登录', value: 'login' },
+            { label: '注册', value: 'register' },
+          ]"
+          block
+          class="mode-switch"
+        />
+
+        <el-form label-position="top" @submit.prevent="submit">
+          <el-form-item v-if="mode === 'login'" label="登录身份">
+            <el-segmented
+              v-model="loginAs"
+              :options="[
+                { label: '普通用户', value: 'user' },
+                { label: '管理员', value: 'admin' },
+              ]"
+              block
+            />
+          </el-form-item>
+          <el-form-item label="用户名">
+            <el-input v-model="username" maxlength="32" placeholder="请输入用户名" autocomplete="username" size="large" />
+          </el-form-item>
+          <el-form-item label="密码">
+            <el-input
+              v-model="password"
+              type="password"
+              show-password
+              maxlength="64"
+              size="large"
+              :placeholder="mode === 'register' ? '至少 6 位' : '请输入密码'"
+              autocomplete="current-password"
+              @keyup.enter="submit"
+            />
+          </el-form-item>
+          <el-button type="primary" class="submit-btn" size="large" :loading="loading" @click="submit">
+            {{ mode === 'login' ? '进入系统' : '注册并进入' }}
+          </el-button>
+        </el-form>
+
+        <p v-if="mode === 'register'" class="hint">注册账号为普通用户，管理员账号由系统管理员分配。</p>
       </div>
-
-      <el-segmented
-        v-model="mode"
-        :options="[
-          { label: '登录', value: 'login' },
-          { label: '注册', value: 'register' },
-        ]"
-        block
-        style="margin-bottom: 18px"
-      />
-
-      <el-form label-position="top" @submit.prevent="submit">
-        <el-form-item v-if="mode === 'login'" label="登录身份">
-          <el-segmented
-            v-model="loginAs"
-            :options="[
-              { label: '普通用户', value: 'user' },
-              { label: '管理员', value: 'admin' },
-            ]"
-            block
-          />
-        </el-form-item>
-        <el-form-item label="用户名">
-          <el-input v-model="username" maxlength="32" placeholder="请输入用户名" autocomplete="username" />
-        </el-form-item>
-        <el-form-item label="密码">
-          <el-input
-            v-model="password"
-            type="password"
-            show-password
-            maxlength="64"
-            :placeholder="mode === 'register' ? '至少 6 位' : '请输入密码'"
-            autocomplete="current-password"
-            @keyup.enter="submit"
-          />
-        </el-form-item>
-        <el-button type="primary" style="width: 100%" :loading="loading" @click="submit">
-          {{ mode === 'login' ? '登录' : '注册' }}
-        </el-button>
-      </el-form>
-
-      <p v-if="mode === 'register'" class="hint">注册账号为普通用户，管理员账号由系统管理员分配。</p>
     </section>
   </div>
 </template>
@@ -119,43 +133,186 @@ async function submit() {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 32px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-atmosphere {
+  position: absolute;
+  inset: 0;
   background:
-    radial-gradient(circle at 20% 20%, rgba(47, 128, 237, 0.18), transparent 40%),
-    radial-gradient(circle at 80% 10%, rgba(39, 174, 96, 0.12), transparent 35%),
-    linear-gradient(160deg, #f4f7fb 0%, #e8eef6 100%);
+    radial-gradient(circle at 18% 20%, rgba(31, 122, 90, 0.28), transparent 34%),
+    radial-gradient(circle at 82% 12%, rgba(22, 58, 82, 0.22), transparent 32%),
+    linear-gradient(145deg, #0f2a3d 0%, #163a52 42%, #1a4a3a 100%);
+  z-index: 0;
 }
-.login-card {
-  width: min(420px, 100%);
-  background: #fff;
-  border: 1px solid #d9e2ec;
-  border-radius: 14px;
-  padding: 28px 24px 20px;
-  box-shadow: 0 12px 40px rgba(23, 50, 77, 0.08);
+
+.login-atmosphere::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at 40% 40%, #000 20%, transparent 75%);
+  animation: grid-drift 18s linear infinite;
 }
-.brand-block {
-  text-align: center;
-  margin-bottom: 18px;
+
+@keyframes grid-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-48px, -48px, 0);
+  }
 }
-.brand-icon {
+
+.login-shell {
+  position: relative;
+  z-index: 1;
+  width: min(920px, 100%);
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 60px rgba(6, 18, 28, 0.35);
+  animation: shell-in 0.45s ease both;
+}
+
+@keyframes shell-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.login-hero {
+  padding: 42px 36px;
+  color: #f3faf7;
+  background:
+    linear-gradient(160deg, rgba(31, 122, 90, 0.35), transparent 55%),
+    linear-gradient(180deg, rgba(15, 42, 61, 0.2), rgba(15, 42, 61, 0.55));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-icon {
   width: 72px;
   height: 72px;
   object-fit: contain;
-  margin-bottom: 8px;
+  border-radius: 16px;
+  margin-bottom: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
-.brand-block h1 {
+
+.login-hero h1 {
   margin: 0;
-  font-size: 24px;
-  color: #17324d;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.2vw, 36px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
 }
-.brand-block p,
-.hint {
-  color: #607087;
+
+.login-hero > p {
+  margin: 12px 0 0;
+  color: rgba(243, 250, 247, 0.78);
+  line-height: 1.65;
+  font-size: 14px;
+  max-width: 28em;
+}
+
+.login-hero ul {
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.login-hero li {
+  position: relative;
+  padding-left: 18px;
+  color: rgba(243, 250, 247, 0.88);
   font-size: 13px;
 }
+
+.login-hero li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: #4ecf9a;
+}
+
+.login-card {
+  background: #fff;
+  padding: 36px 32px 28px;
+}
+
+.card-head {
+  margin-bottom: 18px;
+}
+
+.card-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  color: var(--ink);
+}
+
+.card-head p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mode-switch {
+  margin-bottom: 18px;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
 .hint {
-  margin-top: 16px;
+  margin: 16px 0 0;
   text-align: center;
+  color: var(--muted);
+  font-size: 12px;
   line-height: 1.5;
+}
+
+@media (max-width: 820px) {
+  .login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .login-hero {
+    padding: 28px 24px 20px;
+  }
+
+  .login-hero ul {
+    grid-template-columns: 1fr;
+    margin-top: 18px;
+  }
+
+  .login-card {
+    padding: 24px 20px 20px;
+  }
 }
 </style>

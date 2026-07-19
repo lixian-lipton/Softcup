@@ -202,23 +202,26 @@ async function generate() {
 }
 .status-grid div {
   border: 1px solid #e0e7ef;
-  border-radius: 8px;
-  padding: 12px;
-  background: #fbfcfe;
+  border-radius: 12px;
+  padding: 14px 12px;
+  background: linear-gradient(180deg, #fbfcfe, #f4f7fa);
 }
 .status-grid strong {
   display: block;
   font-size: 24px;
-  color: #17324d;
+  color: #12263a;
+  font-variant-numeric: tabular-nums;
 }
 .status-grid span {
-  color: #607087;
+  color: #5f738a;
+  font-size: 12px;
 }
 .summary {
   line-height: 1.65;
-  background: #f7f9fc;
-  padding: 12px;
-  border-radius: 8px;
+  background: #f5f8fb;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #e8eef4;
 }
 .safety {
   display: flex;
@@ -238,23 +241,31 @@ async function generate() {
   grid-template-columns: 42px minmax(0, 1fr);
   gap: 14px;
   border: 1px solid #dfe7f1;
-  border-radius: 8px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 16px;
   background: #fff;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.step-card:hover {
+  transform: translateY(-1px);
+  border-color: #c5d3e0;
 }
 .step-card.done {
-  border-color: #93c5a3;
-  background: #f7fbf8;
+  border-color: #8fc4a5;
+  background: linear-gradient(180deg, #f7fbf8, #eef8f2);
 }
 .step-index {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: 10px;
   display: grid;
   place-items: center;
-  background: #17324d;
+  background: linear-gradient(145deg, #163a52, #0f2a3d);
   color: #fff;
   font-weight: 700;
+}
+.step-card.done .step-index {
+  background: linear-gradient(145deg, #24956c, #1f7a5a);
 }
 .step-title,
 .meta-row {
