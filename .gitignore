@@ -6,7 +6,6 @@ __pycache__/
 data/uploads/
 data/*.log
 deploy/softcup-loongarch-bundle.tar.gz
-deploy/*.run
 deploy/_bundle_stage/
 data/*.log
 data/softcup.pid
