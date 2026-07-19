@@ -12,7 +12,7 @@ from app.routers import auth, knowledge, search, system, workflow
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.6.0",
+    version="0.6.1",
     description="Soft Cup A1 — 设备检修知识检索与作业系统",
 )
 

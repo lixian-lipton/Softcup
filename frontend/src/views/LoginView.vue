@@ -45,8 +45,15 @@ async function submit() {
     }
     router.replace('/search')
   } catch (e) {
+    const status = e?.response?.status
     const detail = e?.response?.data?.detail
-    ElMessage.error(typeof detail === 'string' ? detail : '操作失败，请确认已更新并重启后端')
+    if (status === 405) {
+      ElMessage.error('登录接口不可用（405）。请重新运行 install.run，并双击桌面图标以重启后端')
+    } else if (typeof detail === 'string') {
+      ElMessage.error(detail)
+    } else {
+      ElMessage.error('操作失败，请确认已更新并重启后端')
+    }
   } finally {
     loading.value = false
   }

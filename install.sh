@@ -141,6 +141,12 @@ main() {
     exit 1
   fi
 
+  # 覆盖安装前先停掉旧进程，避免继续占用旧代码（登录会报 Method Not Allowed）
+  if [[ -x "$STOP_SCRIPT" ]]; then
+    log "停止已有服务（如有）…"
+    bash "$STOP_SCRIPT" >/dev/null 2>&1 || true
+  fi
+
   prepare_runtime
   install_deps
   install_shortcut
@@ -155,7 +161,7 @@ main() {
             ${START_SCRIPT}
   停止服务: ${STOP_SCRIPT}
   访问地址: http://127.0.0.1:8000
-  默认管理员: admin / 123456
+  默认管理员: 登录页选「管理员」，账号 admin / 123456
   ------------------------------------------------
 
 EOF

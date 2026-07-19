@@ -6,8 +6,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 OUT_DIR="$ROOT/deploy"
-OUT_RUN="$OUT_DIR/设备检修系统-安装程序.run"
+OUT_RUN="$OUT_DIR/install.run"
 STAGE="${TMPDIR:-/tmp}/softcup_run_pack_$$"
+# 清理历史中文名安装包，统一为 install.run
+rm -f "$OUT_DIR/设备检修系统-安装程序.run"
 
 rm -rf "$STAGE"
 mkdir -p "$STAGE/Softcup"
@@ -82,5 +84,5 @@ rm -rf "$STAGE"
 
 ls -lh "$OUT_RUN"
 echo "完成。将此 .run 拷到虚机后执行:"
-echo "  chmod +x './设备检修系统-安装程序.run'"
-echo "  './设备检修系统-安装程序.run'"
+echo "  chmod +x ./install.run"
+echo "  ./install.run"

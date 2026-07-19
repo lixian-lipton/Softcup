@@ -13,14 +13,14 @@
 ```bash
 cd /data/xli/softcup
 bash scripts/make_run_installer.sh
-# 生成 deploy/设备检修系统-安装程序.run
+# 生成 deploy/install.run
 ```
 
 虚机上：
 
 ```bash
-chmod +x ./设备检修系统-安装程序.run
-./设备检修系统-安装程序.run
+chmod +x ./install.run
+./install.run
 ```
 
 或已解压源码目录时：

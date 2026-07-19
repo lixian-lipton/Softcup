@@ -163,9 +163,9 @@ LoongArch 上 **无法安装 pymupdf**，且部分 PyPI 镜像会返回 `from ve
 ```bash
 # 本机生成安装程序
 bash scripts/make_run_installer.sh
-# 将 deploy/设备检修系统-安装程序.run 拷到虚机：
-chmod +x ./设备检修系统-安装程序.run
-./设备检修系统-安装程序.run
+# 将 deploy/install.run 拷到虚机：
+chmod +x ./install.run
+./install.run
 ```
 
 安装后桌面生成「设备检修系统」图标，双击即可启动。也可在源码目录执行 `./install.sh`。

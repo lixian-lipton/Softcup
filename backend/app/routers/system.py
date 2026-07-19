@@ -14,6 +14,7 @@ router = APIRouter(tags=["系统"])
 class HealthResponse(BaseModel):
     status: str
     app_name: str
+    version: str = "0.6.1"
     platform: str
     arch: str
     note: str
@@ -22,6 +23,7 @@ class HealthResponse(BaseModel):
     model_loaded: bool
     local_model_path: str
     load_error: str | None = None
+    auth_enabled: bool = True
 
 
 @router.get("/api/health", response_model=HealthResponse)
@@ -34,6 +36,7 @@ async def health():
     return HealthResponse(
         status="ok",
         app_name=settings.app_name,
+        version="0.6.1",
         platform=platform.system(),
         arch=arch,
         note=note,
@@ -42,6 +45,7 @@ async def health():
         model_loaded=llm_service.model_loaded,
         local_model_path=settings.local_model_path,
         load_error=llm_service.load_error,
+        auth_enabled=True,
     )
 
 
