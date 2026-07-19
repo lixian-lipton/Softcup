@@ -1,0 +1,21 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=设备检修系统
+Name[zh_CN]=设备检修系统
+GenericName=设备检修知识检索与作业系统
+Comment=Soft Cup A1 — 检修知识检索、智能问答与作业指引
+Comment[zh_CN]=检修知识检索、智能问答与作业指引
+Exec=@START_SCRIPT@
+Icon=@ICON_PATH@
+Path=@INSTALL_ROOT@
+Terminal=false
+Categories=Office;Utility;Education;
+StartupNotify=true
+Keywords=检修;维修;手册;RAG;
+Actions=Stop;
+
+[Desktop Action Stop]
+Name=停止服务
+Name[zh_CN]=停止服务
+Exec=@STOP_SCRIPT@

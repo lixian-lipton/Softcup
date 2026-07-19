@@ -1,5 +1,39 @@
 # LoongArch + 银河麒麟 部署说明
 
+## 虚机环境约定
+
+- 系统包用 **yum** 安装（银河麒麟），不要用 apt。
+- 虚机已有 **python3 / pip**；项目依赖优先 `scripts/vm_install.sh --offline`（`deploy/offline-wheels`）。
+- 需要编译工具时再用 yum，例如：`sudo yum install -y gcc gcc-c++ make python3-devel`。
+
+## 一键安装程序（推荐演示）
+
+本机打包自解压安装包：
+
+```bash
+cd /data/xli/softcup
+bash scripts/make_run_installer.sh
+# 生成 deploy/设备检修系统-安装程序.run
+```
+
+虚机上：
+
+```bash
+chmod +x ./设备检修系统-安装程序.run
+./设备检修系统-安装程序.run
+```
+
+或已解压源码目录时：
+
+```bash
+cd Softcup-main   # 或安装目录
+chmod +x install.sh
+./install.sh
+```
+
+安装完成后桌面会出现 **「设备检修系统」** 图标（图标文件：`设备检修系统.png`）。  
+双击图标 → 自动启动后端并打开浏览器。右键快捷方式可选「停止服务」。
+
 ## 现象说明
 
 虚机上出现：

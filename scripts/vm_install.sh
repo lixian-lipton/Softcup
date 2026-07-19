@@ -52,13 +52,12 @@ install_offline() {
     exit 1
   fi
   echo "==> 离线安装（来自 $WHEEL_DIR）"
-  echo "提示: SQLAlchemy 使用纯 Python wheel，无需 Cython/Rust。"
-  echo "      greenlet 若编译失败，可先: sudo yum install -y gcc gcc-c++ python3-devel"
+  echo "提示: 核心依赖均为 wheel，无需 Cython/Rust；系统包装请用 yum。"
 
   pip install --no-index --find-links="$WHEEL_DIR" \
     pip setuptools wheel packaging tomli
 
-  # 先装除 greenlet 外的包（均为 wheel，无需编译）
+  # 核心包（均为 wheel，无需编译）
   pip install --no-index --find-links="$WHEEL_DIR" \
     fastapi==0.99.1 \
     pydantic==1.10.22 \
@@ -78,10 +77,16 @@ install_offline() {
     aiofiles==24.1.0 \
     python-dotenv==1.0.1
 
-  # greenlet 需本地 gcc；失败时同步 API 仍通常可用
-  if ! pip install --no-index --find-links="$WHEEL_DIR" greenlet==3.1.1; then
-    echo "WARN: greenlet 安装失败。若只有同步接口，一般仍可运行。"
-    echo "      建议安装编译工具后重试: sudo yum install -y gcc gcc-c++ python3-devel"
+  # greenlet 可选：缺 Python.h 时直接跳过，避免 pip 刷两次长错误
+  _py_inc="$(python -c 'import sysconfig; print(sysconfig.get_path("include") or "")' 2>/dev/null || true)"
+  if [[ -n "${_py_inc}" && -f "${_py_inc}/Python.h" ]] && command -v g++ >/dev/null 2>&1; then
+    echo "==> 检测到 Python.h / g++，安装可选依赖 greenlet"
+    pip install --no-index --find-links="$WHEEL_DIR" greenlet==3.1.1
+  else
+    echo "==> 跳过 greenlet（缺少 Python 开发头文件或 g++）。"
+    echo "    本项目同步 API 不依赖它，可直接启动服务。"
+    echo "    若仍要安装: sudo yum install -y gcc gcc-c++ make python3-devel"
+    echo "    然后重新执行: bash scripts/vm_install.sh --offline"
   fi
 }
 
@@ -122,14 +127,15 @@ for m in ("fastapi", "uvicorn", "pydantic", "sqlalchemy", "httpx"):
     print("  OK", m)
 try:
     import greenlet  # noqa: F401
-    print("  OK greenlet")
-except Exception as exc:
-    print("  WARN greenlet:", exc)
-print("全部关键依赖可用")
+    print("  OK greenlet（可选）")
+except Exception:
+    print("  SKIP greenlet（可选，未安装不影响当前同步服务）")
+print("关键依赖可用，可以启动服务")
 PY
 
 echo
 echo "下一步（勿再运行 ingest_pdf，LoongArch 无 pymupdf）："
-echo "  1) 确认 data/search.db 已从本机拷贝"
-echo "  2) 若无 frontend/dist，执行: cd frontend && npm install && npm run build"
-echo "  3) cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+echo "  1) 确认 data/search.db 存在"
+echo "  2) 确认 frontend/dist 存在（zip/仓库里一般已有）"
+echo "  3) cd backend && source ../backend/.venv/bin/activate"
+echo "     uvicorn app.main:app --host 0.0.0.0 --port 8000"

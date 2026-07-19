@@ -156,16 +156,19 @@ cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ## LoongArch 虚机部署
 
-LoongArch 上 **无法安装 pymupdf**，且部分 PyPI 镜像会返回 `from versions: none`。请使用离线包：
+LoongArch 上 **无法安装 pymupdf**，且部分 PyPI 镜像会返回 `from versions: none`。请使用离线包或一键安装程序。
+
+### 一键安装（推荐）
 
 ```bash
-# 本机打包
-bash scripts/pack_loongarch_bundle.sh
-# 将 deploy/softcup-loongarch-bundle.tar.gz 拷到虚机后：
-tar -xzf softcup-loongarch-bundle.tar.gz
-cd Softcup-main && bash scripts/vm_install.sh
-cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000
+# 本机生成安装程序
+bash scripts/make_run_installer.sh
+# 将 deploy/设备检修系统-安装程序.run 拷到虚机：
+chmod +x ./设备检修系统-安装程序.run
+./设备检修系统-安装程序.run
 ```
+
+安装后桌面生成「设备检修系统」图标，双击即可启动。也可在源码目录执行 `./install.sh`。
 
 详见 `deploy/LOONGARCH部署.md`。
 
