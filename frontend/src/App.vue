@@ -166,7 +166,14 @@ onMounted(() => {
     </el-container>
   </el-container>
 
-  <el-dialog v-model="pwdVisible" title="修改密码" width="420px" destroy-on-close>
+  <el-dialog
+    v-model="pwdVisible"
+    title="修改密码"
+    width="420px"
+    append-to-body
+    align-center
+    destroy-on-close
+  >
     <el-form label-position="top" @submit.prevent="submitChangePassword">
       <el-form-item label="当前密码">
         <el-input v-model="pwdForm.old_password" type="password" show-password autocomplete="current-password" />
