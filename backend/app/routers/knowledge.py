@@ -201,7 +201,7 @@ async def review_annotation(
 
 @router.post("/knowledge/documents", response_model=DocumentIngestResult)
 async def upload_knowledge_document(
-    device_model: str = Form("摩托车发动机"),
+    device_model: str = Form(""),
     title: str | None = Form(None),
     file: UploadFile = File(...),
     _: User = Depends(require_admin),

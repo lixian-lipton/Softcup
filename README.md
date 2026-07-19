@@ -170,6 +170,8 @@ chmod +x ./install.run
 
 安装后桌面生成「设备检修系统」图标，双击即可启动。也可在源码目录执行 `./install.sh`。
 
+首次启动会创建管理员账号，初始口令写入安装目录 `data/INITIAL_ADMIN.txt`（界面不展示口令）。也可预先设置环境变量 `ADMIN_PASSWORD`。
+
 详见 `deploy/LOONGARCH部署.md`。
 
 ## 环境说明

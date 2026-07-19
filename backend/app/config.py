@@ -43,7 +43,7 @@ class Settings(BaseSettings):
 
     # LLM: mock | local | api
     llm_mode: str = "mock"
-    local_model_path: str = "/data/xli/Qwen3.5-0.8B"
+    local_model_path: str = ""
     llm_max_tokens: int = 512
     llm_context_chars: int = 5000
     llm_api_timeout: float = 120.0

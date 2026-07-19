@@ -14,7 +14,7 @@ router = APIRouter(tags=["系统"])
 class HealthResponse(BaseModel):
     status: str
     app_name: str
-    version: str = "0.6.1"
+    version: str = "0.6.2"
     platform: str
     arch: str
     note: str
@@ -29,14 +29,11 @@ class HealthResponse(BaseModel):
 @router.get("/api/health", response_model=HealthResponse)
 async def health():
     arch = platform.machine()
-    if arch.lower() in ("loongarch64", "loongarch"):
-        note = "当前运行于 LoongArch 环境。"
-    else:
-        note = "本机开发模式；上线前请在 LoongArch + 银河麒麟虚机验证。"
+    note = "服务运行正常"
     return HealthResponse(
         status="ok",
         app_name=settings.app_name,
-        version="0.6.1",
+        version="0.6.2",
         platform=platform.system(),
         arch=arch,
         note=note,

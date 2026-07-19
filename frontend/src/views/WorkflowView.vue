@@ -1,11 +1,11 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getWorkflow } from '../api'
 
-const deviceModel = ref('摩托车发动机')
+const deviceModel = ref('')
 const level = ref('level1')
-const fault = ref('火花塞')
+const fault = ref('')
 const loading = ref(false)
 const workflow = ref(null)
 const checkedSteps = ref([])
@@ -56,7 +56,13 @@ function toggleStep(order, val) {
   }
 }
 
-onMounted(loadWorkflow)
+async function generate() {
+  if (!deviceModel.value.trim()) {
+    ElMessage.warning('请填写设备型号')
+    return
+  }
+  await loadWorkflow()
+}
 </script>
 
 <template>
@@ -70,19 +76,23 @@ onMounted(loadWorkflow)
       </div>
       <el-form label-position="top">
         <el-form-item label="设备型号">
-          <el-input v-model="deviceModel" />
+          <el-input v-model="deviceModel" placeholder="请输入设备型号" />
         </el-form-item>
         <el-form-item label="检修等级">
           <el-segmented v-model="level" :options="levels" block />
         </el-form-item>
         <el-form-item label="故障描述">
-          <el-input v-model="fault" maxlength="300" show-word-limit />
+          <el-input v-model="fault" maxlength="300" show-word-limit placeholder="选填" />
         </el-form-item>
-        <el-button type="primary" :loading="loading" @click="loadWorkflow">生成指引</el-button>
+        <el-button type="primary" :loading="loading" @click="generate">生成指引</el-button>
       </el-form>
     </section>
 
-    <section class="panel status-panel" v-if="workflow">
+    <section class="panel status-panel" v-if="!workflow">
+      <el-empty description="填写左侧参数后点击「生成指引」" :image-size="80" />
+    </section>
+
+    <section class="panel status-panel" v-else>
       <div class="section-title">
         <div>
           <h2>{{ workflow.workflow_name }}</h2>

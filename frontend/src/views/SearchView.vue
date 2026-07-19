@@ -3,8 +3,8 @@ import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { askImage, askText, createAnnotation, searchText } from '../api'
 
-const deviceModel = ref('摩托车发动机')
-const query = ref('火花塞怎么检查')
+const deviceModel = ref('')
+const query = ref('')
 const loading = ref(false)
 const searchLoading = ref(false)
 const result = ref(null)
@@ -14,7 +14,13 @@ const imagePreview = ref('')
 const rating = ref(0)
 const correction = ref('')
 
-const quickQueries = ['火花塞怎么检查', '机油渗漏怎么排查', '怠速不稳', '压缩压力测量', '气门间隙调整']
+const llmModeLabel = computed(() => {
+  const mode = result.value?.llm_mode
+  if (mode === 'api') return '云端模型'
+  if (mode === 'local') return '本地模型'
+  if (mode === 'mock') return '内置应答'
+  return mode || ''
+})
 
 const riskType = computed(() => {
   const risk = result.value?.risk_level
@@ -46,7 +52,7 @@ async function doSearch() {
     searchResult.value = data
     result.value = null
   } catch {
-    ElMessage.error('检索失败，请确认后端已启动')
+    ElMessage.error('检索失败，请稍后重试')
   } finally {
     searchLoading.value = false
   }
@@ -75,15 +81,11 @@ async function doAsk() {
     }
     searchResult.value = null
   } catch (e) {
-    const msg = e?.response?.data?.detail || '请求失败，请确认后端已启动'
-    ElMessage.error(msg)
+    const msg = e?.response?.data?.detail || '诊断请求失败，请稍后重试'
+    ElMessage.error(typeof msg === 'string' ? msg : '诊断请求失败，请稍后重试')
   } finally {
     loading.value = false
   }
-}
-
-function applyQuickQuery(text) {
-  query.value = text
 }
 
 function onFileChange(uploadFile) {
@@ -117,23 +119,24 @@ async function submitFeedback() {
       <div class="section-title">
         <div>
           <h2>多模态检索</h2>
-          <p>文本、图片和设备型号联合召回维修手册与案例。</p>
+          <p>支持文本、图片与设备型号，检索手册与案例知识。</p>
         </div>
-        <el-tag type="info">FTS + RAG</el-tag>
       </div>
 
       <el-form label-position="top">
         <el-form-item label="设备型号">
-          <el-input v-model="deviceModel" placeholder="摩托车发动机" />
+          <el-input v-model="deviceModel" placeholder="选填，如设备或机型名称" />
         </el-form-item>
         <el-form-item label="故障描述">
-          <el-input v-model="query" type="textarea" :rows="4" maxlength="300" show-word-limit />
+          <el-input
+            v-model="query"
+            type="textarea"
+            :rows="4"
+            maxlength="300"
+            show-word-limit
+            placeholder="请描述故障现象或输入检索关键词"
+          />
         </el-form-item>
-        <div class="quick-row">
-          <el-button v-for="item in quickQueries" :key="item" size="small" @click="applyQuickQuery(item)">
-            {{ item }}
-          </el-button>
-        </div>
         <el-form-item label="现场图片">
           <el-upload
             drag
@@ -163,7 +166,7 @@ async function submitFeedback() {
             <div class="tag-row">
               <el-tag :type="riskType">风险 {{ result.risk_level }}</el-tag>
               <el-tag type="success">置信度 {{ Math.round(result.confidence * 100) }}%</el-tag>
-              <el-tag>{{ result.llm_mode }}</el-tag>
+              <el-tag v-if="llmModeLabel">{{ llmModeLabel }}</el-tag>
             </div>
           </div>
           <el-progress type="dashboard" :percentage="Math.round(result.confidence * 100)" :width="92" />

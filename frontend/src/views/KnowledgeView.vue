@@ -22,7 +22,7 @@ const annStatusFilter = ref('')
 
 const form = ref({
   title: '',
-  device_model: '摩托车发动机',
+  device_model: '',
   symptom: '',
   solution: '',
 })
@@ -30,7 +30,7 @@ const imageFile = ref(null)
 const imagePreview = ref('')
 const docFile = ref(null)
 const docTitle = ref('')
-const docDevice = ref('摩托车发动机')
+const docDevice = ref('')
 const docLoading = ref(false)
 
 const typeLabel = { device: '设备', fault: '故障', part: '部件', procedure: '方案' }
@@ -121,7 +121,7 @@ async function submitCase() {
   if (imageFile.value) fd.append('image', imageFile.value)
   await createCase(fd)
   ElMessage.success('案例已提交，等待管理员审核')
-  form.value = { title: '', device_model: '摩托车发动机', symptom: '', solution: '' }
+  form.value = { title: '', device_model: '', symptom: '', solution: '' }
   clearImage()
   statusFilter.value = ''
   await refreshCases()
@@ -198,7 +198,7 @@ async function submitDoc() {
       </div>
       <el-form label-position="top">
         <el-form-item label="标题"><el-input v-model="form.title" maxlength="120" show-word-limit /></el-form-item>
-        <el-form-item label="设备型号"><el-input v-model="form.device_model" maxlength="128" /></el-form-item>
+        <el-form-item label="设备型号"><el-input v-model="form.device_model" maxlength="128" placeholder="请输入设备型号" /></el-form-item>
         <el-form-item label="故障现象">
           <el-input v-model="form.symptom" type="textarea" :rows="3" maxlength="1000" show-word-limit />
         </el-form-item>
@@ -244,7 +244,7 @@ async function submitDoc() {
       <p class="tip">推荐 TXT/MD。PDF 需本机有 pymupdf；虚机建议上传文本。</p>
       <el-form label-position="top">
         <el-form-item label="显示名称（可选）"><el-input v-model="docTitle" placeholder="默认用文件名" /></el-form-item>
-        <el-form-item label="设备型号"><el-input v-model="docDevice" /></el-form-item>
+        <el-form-item label="设备型号"><el-input v-model="docDevice" placeholder="选填" /></el-form-item>
         <el-form-item label="文件">
           <el-upload :auto-upload="false" :limit="1" accept=".txt,.md,.markdown,.pdf,.csv" :on-change="onDocChange">
             <el-button>选择文件</el-button>

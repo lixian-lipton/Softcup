@@ -23,6 +23,20 @@ const sourceSummary = computed(() => {
   return { manual, cases }
 })
 const isLoginPage = computed(() => route.path === '/login')
+const llmLabel = computed(() => {
+  const mode = health.value?.llm_mode
+  if (mode === 'api') return '云端模型'
+  if (mode === 'local') return '本地模型'
+  if (mode === 'mock') return '内置应答'
+  if (mode === 'offline') return '未连接'
+  return mode || '-'
+})
+const statusLabel = computed(() => {
+  if (health.value?.status === 'ok') return '正常'
+  if (health.value?.status === 'offline') return '离线'
+  return health.value?.status || '检查中'
+})
+const headerSubtitle = computed(() => route.meta.subtitle || '设备检修知识检索与作业平台')
 
 async function refreshSystem() {
   try {
@@ -30,7 +44,7 @@ async function refreshSystem() {
     health.value = healthData
     stats.value = statsData
   } catch {
-    health.value = { status: 'offline', llm_mode: 'offline', arch: '-', note: '后端未启动' }
+    health.value = { status: 'offline', llm_mode: 'offline', arch: '-' }
   }
 }
 
@@ -52,8 +66,8 @@ onMounted(() => {
       <div class="brand">
         <el-icon size="24"><Setting /></el-icon>
         <div>
-          <strong>设备检修助手</strong>
-          <span>Soft Cup A1</span>
+          <strong>设备检修系统</strong>
+          <span>知识检索与作业平台</span>
         </div>
       </div>
 
@@ -67,19 +81,15 @@ onMounted(() => {
       <div class="system-panel">
         <div class="panel-row">
           <span>服务</span>
-          <el-tag size="small" :type="statusType">{{ health?.status || 'checking' }}</el-tag>
+          <el-tag size="small" :type="statusType">{{ statusLabel }}</el-tag>
         </div>
         <div class="panel-row">
-          <span>LLM</span>
-          <strong>{{ health?.llm_mode || '-' }}</strong>
-        </div>
-        <div class="panel-row">
-          <span>架构</span>
-          <strong>{{ health?.arch || '-' }}</strong>
+          <span>智能引擎</span>
+          <strong>{{ llmLabel }}</strong>
         </div>
         <div class="panel-row" v-if="isLoggedIn">
-          <span>账号</span>
-          <strong>{{ currentUser?.username }} ({{ isAdmin ? '管理员' : '用户' }})</strong>
+          <span>当前用户</span>
+          <strong>{{ currentUser?.username }}（{{ isAdmin ? '管理员' : '用户' }}）</strong>
         </div>
         <div class="metric-grid">
           <div>
@@ -97,8 +107,8 @@ onMounted(() => {
     <el-container>
       <el-header class="topbar">
         <div>
-          <h1>{{ route.meta.title || '智能检修工作台' }}</h1>
-          <p>{{ health?.note || '正在读取系统状态' }}</p>
+          <h1>{{ route.meta.title || '工作台' }}</h1>
+          <p>{{ headerSubtitle }}</p>
         </div>
         <div class="top-actions">
           <el-button size="small" :icon="Refresh" @click="refreshSystem">刷新状态</el-button>

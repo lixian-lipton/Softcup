@@ -33,7 +33,7 @@ async function submit() {
         password: password.value,
       })
       setSession(data.access_token, data.user)
-      ElMessage.success('注册成功，已以普通用户身份进入')
+      ElMessage.success('注册成功')
     } else {
       const { data } = await login({
         username: username.value.trim(),
@@ -41,18 +41,18 @@ async function submit() {
         login_as: loginAs.value,
       })
       setSession(data.access_token, data.user)
-      ElMessage.success(loginAs.value === 'admin' ? '管理员登录成功' : '用户登录成功')
+      ElMessage.success('登录成功')
     }
     router.replace('/search')
   } catch (e) {
     const status = e?.response?.status
     const detail = e?.response?.data?.detail
-    if (status === 405) {
-      ElMessage.error('登录接口不可用（405）。请重新运行 install.run，并双击桌面图标以重启后端')
+    if (status === 405 || status === 404) {
+      ElMessage.error('登录服务暂不可用，请稍后重试或联系管理员')
     } else if (typeof detail === 'string') {
       ElMessage.error(detail)
     } else {
-      ElMessage.error('操作失败，请确认已更新并重启后端')
+      ElMessage.error('登录失败，请检查账号密码后重试')
     }
   } finally {
     loading.value = false
@@ -66,7 +66,7 @@ async function submit() {
       <div class="brand-block">
         <img src="/brand-icon.png" alt="设备检修系统" class="brand-icon" @error="($e) => ($e.target.style.display='none')" />
         <h1>设备检修系统</h1>
-        <p>登录后使用检索、作业指引与知识沉淀</p>
+        <p>设备检修知识检索与作业平台</p>
       </div>
 
       <el-segmented
@@ -91,11 +91,7 @@ async function submit() {
           />
         </el-form-item>
         <el-form-item label="用户名">
-          <el-input
-            v-model="username"
-            maxlength="32"
-            :placeholder="mode === 'login' && loginAs === 'admin' ? '管理员账号，如 admin' : '普通用户名'"
-          />
+          <el-input v-model="username" maxlength="32" placeholder="请输入用户名" autocomplete="username" />
         </el-form-item>
         <el-form-item label="密码">
           <el-input
@@ -103,18 +99,17 @@ async function submit() {
             type="password"
             show-password
             maxlength="64"
-            :placeholder="mode === 'register' ? '至少 6 位' : '登录密码'"
+            :placeholder="mode === 'register' ? '至少 6 位' : '请输入密码'"
+            autocomplete="current-password"
             @keyup.enter="submit"
           />
         </el-form-item>
         <el-button type="primary" style="width: 100%" :loading="loading" @click="submit">
-          {{ mode === 'login' ? '登录' : '注册为普通用户' }}
+          {{ mode === 'login' ? '登录' : '注册' }}
         </el-button>
       </el-form>
 
-      <p class="hint">
-        注册只能创建普通用户。管理员请选择「管理员」身份后使用默认账号 admin / 123456（演示用，请尽快修改）。
-      </p>
+      <p v-if="mode === 'register'" class="hint">注册账号为普通用户，管理员账号由系统管理员分配。</p>
     </section>
   </div>
 </template>
